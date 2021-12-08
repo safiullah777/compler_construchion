@@ -316,5 +316,6 @@ for (var j = 0; j < data.length; j++) {
 console.log(words)
 fs.writeFileSync('output.txt','')
 words.forEach((word)=>{
-fs.appendFileSync('output.txt',`{classpart:${word.cp} , valuepart:${word.word} , lineNO:${word.lineNo}} \n`)
+ fs.appendFileSync('output.txt',JSON.stringify({classpart:word.cp , valuepart:word.word , lineNO:word.lineNo}))
+fs.appendFileSync('output.txt',"\n")
 })

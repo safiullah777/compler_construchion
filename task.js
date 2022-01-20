@@ -1,321 +1,147 @@
-let operators = [
-  "=",
-  "==",
-  "===",
-  "!==",
-  "<=",
-  ">=",
-  "/=",
-  "*=",
-  "+=",
-  "-=",
-  "++",
-  "--",
-  "&&",
-  "||",
-  "+",
-  "-",
-  "*",
-  "/",
-  ">",
-  "<",
-];
-let punctuators = [
-  "{",
-  "}",
-  "(",
-  ")",
-  "[",
-  "]",
-  ".",
-  ",",
-  ";",
-  ":",
-  '"',
-  "'",
-];
-let keywords = [
-  "await",
-  "break",
-  "case",
-  "catch",
-  "class",
-  "const",
-  "continue",
-  "debugger",
-  "default",
-  "delete",
-  "do",
-  "else",
-  "enum",
-  "export",
-  "extends",
-  "false",
-  "finally",
-  "for",
-  "function",
-  "if",
-  "implements",
-  "import",
-  "interface",
-  "instanceof",
-  "in",
-  "let",
-  "new",
-  "null",
-  "package",
-  "private",
-  "protected",
-  "public",
-  "return",
-  "super",
-  "switch",
-  "static",
-  "this",
-  "throw",
-  "try",
-  "true",
-  "typeof",
-  "var",
-  "void",
-  "while",
-  "with",
-  "yield",
-];
-let regexForInt=new RegExp(/^([\+\-]?)[0-9]+$/g)
-let regexForFloat=new RegExp(/^([\+\-]?)[0-9]*\.[0-9]+$/g)
-let regexForId=new RegExp(/^([a-zA-Z\_\$][a-zA-Z0-9\\d\$\_]*)$/g)
-// console.log(regexForId.test("1_"))
-let breaks = [...operators, ...punctuators, ...keywords];
-let temp = "";
-let words = [];
-let stringOpen = false;
-let floatStarted=false;
-let signNumber=false
-let iscomment=false 
-let backtickString=false
+let regexForInt=str=>/^([\+\-]?)[0-9]+$/g.test(str)
+let regexForFloat=str=>/^([\+\-]?)[0-9]*\.[0-9]+$/g.test(str)
+let regexForId=str=>/^([a-zA-Z\_\$][a-zA-Z0-9\\d\$\_]*)$/g.test(str)
 let fs = require("fs");
-let cp="";
-let lineNo = 0;
 const data = fs.readFileSync("words.txt", { encoding: "utf-8" }).split("\n");
-for (var j = 0; j < data.length; j++) {
-  lineNo=j+1;
-  stringOpen=false
-  iscomment=false
-  if(!backtickString){
-  temp=""
-  }
-  var linedata = data[j];
-  for (var i = 0; i < linedata.length; i++) {
-      
-      if(linedata[i]=='"' && !stringOpen && !backtickString){
-        stringOpen=true;
-      }
-      else if (stringOpen && i==linedata.length-1 && linedata[i]!=='"' ){
-        temp+=linedata[i]
-        words.push({word:temp,lineNo,cp:'invalid token'})
-        stringOpen=false
-        temp=""
-      }
-      else if(stringOpen && linedata[i]!='"'){
-        temp+=linedata[i];
-      }
-      else if(linedata[i]=='"'&& stringOpen){
-        if(linedata[i-1]!=="\\" ){
-        stringOpen=false;
-        words.push({word:temp,lineNo,cp:"String"})
-        temp=""
-        }
-        else{
-          temp=temp.slice(0,temp.length-1)
-          temp+=linedata[i]
-        }
-      }
-      else if(linedata[i]=="`" && !backtickString && !stringOpen ){
-        backtickString=true
-      }
-      // else if(i==data[data.length-1].length && backtickString && data[data.length-1][data[data.length-1].length-1]!="`" ){
-      //   temp+=linedata[i]
-      //   words.push({word:temp,lineNo,cp:'invalid token'})
-      //   backtickString=false
-      //   temp=""
-      // }
-      else if (backtickString && linedata[i]!='`'){
-        temp+=linedata[i];
-      }
-      else if(linedata[i]=='`'&& backtickString){
-        if(linedata[i-1]!=="\\"){
-        backtickString=false;
-        words.push({word:temp,lineNo,cp:"String"})
-        temp=""
-        }
-        else{
-          temp=temp.slice(0,temp.length-1)
-          temp+=linedata[i]
-        }
-      }
-      
-      else if(linedata[i]=="-" && linedata[i+1]!="-" && linedata[i+1]>=0 && !linedata[i-1]>=0  || linedata[i]=="+" && linedata[i+1]!="+" && linedata[i+1]>=0 && !linedata[i-1]>=0  ){
-        signNumber=true
-        temp+=linedata[i]
-      }
-      else if(linedata[i]>=0 && signNumber|| linedata[i]<=0 && signNumber ){
-        temp+=linedata[i]
-
-
-      }
-      else if(!linedata[i]>=0 && signNumber|| !linedata[i]<=0 && signNumber ){
-        signNumber=false
-        words.push({word:temp,lineNo,cp:"number"})
-        temp=""
-        --i
-      }
-
-
-      // else if(linedata[i]=="-" && linedata[i+1]!="-" && !linedata[i-1]>=0  || linedata[i]=="+" && linedata[i+1]!="+"){
-      //   if(linedata[i+1]>=0 || linedata[i+1]=="."){
-      //     temp+=linedata[i]+linedata[i+1]
-      //     console.log('mnus check krny wala if',temp)
-      //     i++
-      //   }
-      //   else{
-      //     words.push({word:linedata[i],lineNo,cp:linedata[i]})
-      //     console.log('mnus check krny wala else',linedata[i])
-      //     temp=""
-      //   }
-      // }
-      else if (linedata[i]=="."){
-        floatStarted=true
-        if(words[words.length-1].word>=0 && floatStarted||words[words.length-1].word<=0 && floatStarted ){
-          temp+=words[words.length-1].word+"."
-          console.log('pont check krny wala if',linedata[i])
-          words.pop()
-        }
-        else if(linedata[i+1]>=0){
-          temp+="."
-        }
-        else{
-          words.push({word:".",lineNo,cp:'.'})
-          floatStarted=false
-          temp=""
-        }
-      }
-      
-      
-      else if (linedata[i]+linedata[i+1]=="//" && !stringOpen){
-          i=linedata.length-1
-      }
-      
-      else{
-
-          if (linedata[i] !== " ") {
-
-        if(operators.includes(linedata[i]+linedata[i+1]+linedata[i+2])){
-            var triple=linedata[i]+linedata[i+1]+linedata[i+2]
-            words.push({ word:triple , lineNo,cp:"relatonal operator"});
-            temp = "";
-            i+=2
-
-        }
-        else
-         if(operators.includes(linedata[i]+linedata[i+1])){
-            if(linedata[i]+linedata[i+1]=="==" || linedata[i]+linedata[i+1]==">="|| linedata[i]+linedata[i+1]==">"|| linedata[i]+linedata[i+1]=="<"||linedata[i]+linedata[i+1]=="<="||linedata[i]+linedata[i+1]=="!="){
-              cp="relational operator"
-              console.log("relational hy")
-            }
-            else if(linedata[i]+linedata[i+1]=="-="|| linedata[i]+linedata[i+1]=="*="||linedata[i]+linedata[i+1]=="/="||linedata[i]+linedata[i+1]=="+="){
-              cp="assignment operators"
-              console.log("assogn,en  hy")
-
-            }
-            else if(linedata[i]+linedata[i+1]=="++"||linedata[i]+linedata[i+1]=="--"){
-              cp="inc dec"
-            }
-            else if(linedata[i]+linedata[i+1]=="&&"||linedata[i]+linedata[i+1]=="||"){
-              cp="logical operator"
-            }
-            words.push({ word:linedata[i]+linedata[i+1], lineNo, cp:cp});
-            temp = "";
-            cp=''
-            i++
-        }
-      else{
-        temp += linedata[i];
-        if(linedata[i+1]==" "){
-          if(keywords.includes(temp)){
-            cp="keywords"
+const {operators,punctuators,breaks,keywords}=require('./breakers.js')
+var two="";
+var three="";
+var checkThree;
+var checkTwo;
+var splits=[]
+let stringOpen = false;
+let backtickString=false
+var uploadToken=(str,lineNo,cp)=>splits.push({vp:str,cp:cp?cp:"",lineNo})
+const compare=(data,toCompareWith)=>data.vp==toCompareWith
+var temp=""
+data.forEach((line,lineNo)=>{
+    ++lineNo
+    if(!backtickString){
+    temp="";
+    }
+    for (let i= 0; i<line.length; i++) {
+        // console.log(line[i])
+        if(line[i]=='"' && !stringOpen && !backtickString){
+            stringOpen=true;
           }
-
-          else if(punctuators.includes(temp)){
-            cp=temp
+         
+          else if (stringOpen && i==line.length-1 && line[i]!=='"' ){
+            temp+=line[i]
+            // words.push({word:temp,lineNo,cp:'invalid token'})
+            uploadToken(temp,lineNo,"invalid token");
+            stringOpen=false
+            temp=""
           }
-          else if(temp=="="){
-            cp="="
+          else if(stringOpen && line[i]!='"'){
+            temp+=line[i];
           }
-          else if(temp=="-"||temp=="+"||temp=="*"||temp=="/"){
-            cp="arithmetic operator"
-          }
-          else if(regexForInt.test(parseInt(temp)) || regexForFloat.test(parseFloat(temp))){
-            cp="number"
-          }
-          else if(regexForId.test(temp)){
-           cp="Id"
-          }
-          words.push({ word: temp, lineNo,cp});
-          temp=""
-        }
-        else if (breaks.includes(temp) || breaks.includes(linedata[i + 1])) {
-
-            if(keywords.includes(temp)){
-              cp="keywords"
-            }
-            else if(punctuators.includes(temp)){
-              cp=temp
-            }
-            else if(temp=="="){
-              cp="="
-            }
-            else if(temp=="-"||temp=="+"||temp=="*"||temp=="/"){
-              cp="arithmetic operator"
-            }
-            else if(regexForInt.test(temp) || regexForFloat.test(temp)){
-              cp="number2"
-            }
-            else if(regexForId.test(temp)){
-              cp="Id"
+          else if(line[i]=='"'&& stringOpen){
+            if(line[i-1]!=="\\" ){
+            stringOpen=false;
+            // words.push({word:temp,lineNo,cp:"String"})
+            uploadToken(temp,lineNo)
+            temp=""
             }
             else{
-              cp="invalid token"
+              temp=temp.slice(0,temp.length-1)
+              temp+=line[i]
             }
-            
-            
-          words.push({ word: temp, lineNo,cp});
-          temp = "";
-          cp=""
-          // console.log("akhri else ka else",linedata[i])
-          
-      }
-      else if (i==linedata.length-1){
-        if(regexForInt.test(temp) || regexForFloat.test(temp)){
-          cp="number3"
+          }
+          else if(line[i]=="`" && !backtickString && !stringOpen ){
+            uploadToken(temp,lineNo)
+            temp=""
+            backtickString=true
+          }
+          else if (backtickString && line[i]!='`'){
+            temp+=line[i]
+             if(lineNo==data.length-1 && i==line.length-1){
+                uploadToken(temp,lineNo,"invalid token");
+              }
+          }
+          else if(line[i]=='`'&& backtickString){
+            if(line[i-1]!=="\\"){
+            backtickString=false;
+            uploadToken(temp,lineNo,"String")
+            temp=""
+            }
+            else{
+              temp=temp.slice(0,temp.length-1)
+              temp+=line[i]
+            }
+          }
+          else if (line[i]+line[i+1]=="//" && !stringOpen){
+            i=line.length-1
+            }
+          else{
+        temp+=line[i]
+        if(breaks.includes(line[i]) || breaks.includes(line[i+1])){
+            uploadToken(temp,lineNo)
+            temp=""
         }
-        else{
-          cp="invalid token"
+        else if(i==line.length-1){
+            uploadToken(temp,lineNo)
+            temp=""
         }
-        
-        
-          words.push({ word: temp, lineNo,cp});
-          temp=""
-      }
-      
     }
-    }
-  }
+    // }
 }
-}
-console.log(words)
-fs.writeFileSync('output.txt','')
-words.forEach((word)=>{
- fs.appendFileSync('output.txt',JSON.stringify({classpart:word.cp , valuepart:word.word , lineNO:word.lineNo}))
-fs.appendFileSync('output.txt',"\n")
 })
+splits.forEach((data,i)=>{
+    two=data?.vp+splits[i+1]?.vp
+    three=data?.vp+splits[i+1]?.vp+splits[i+2]?.vp
+    checkTwo=operators.includes(two)
+    checkThree=operators.includes(three)
+    if(checkThree){
+        data.vp=three
+        splits.splice(i+1,2)
+    }
+    else if(checkTwo){
+        data.vp=two
+        splits.splice(i+1,1)
+    }
+})
+for(var i=0;i<splits.length;i++){
+        if(splits[i].vp==" " || splits[i].vp=="\t"){
+        splits.splice(i,1);
+        i--
+    }
+}
+splits.forEach((data,i)=>{
+    if(data.vp=="." && splits[i+1]?.vp>=0 && data.lineNo==splits[i+1].lineNo){
+        data.vp=data.vp+splits[i+1].vp
+        splits.splice(i+1,1);
+    }
+
+})
+splits.forEach((data,i)=>{
+  if(data.vp.includes('.') && data.vp>=0 && splits[i-1]?.vp>=0 && data.lineNo==splits[i-1].lineNo ){
+      splits[i-1].vp=splits[i-1]?.vp+data.vp
+      splits.splice(i,1)
+    }
+})
+splits.forEach((data,i)=>{
+    if(data.cp==""){
+        if(compare(data,"true") || compare(data,"false") ) data.cp="boolean"
+        else if(compare(data,"++")||compare(data,"--")) data.cp="inc_dec"
+        else if(compare(data,"=")) data.cp="="
+        else if(compare(data,"*")||compare(data,"/")||compare(data,"%")) data.cp="MDM"
+        else if(compare(data,"+")||compare(data,"-")) data.cp="PM"
+        else if(compare(data,"!")) data.cp="!"
+        else if(compare(data,"<=")||compare(data,">=")||compare(data,"==")||compare(data,"!=")||compare(data,">")||compare(data,"<")||compare(data,"!==")||compare(data,"===")) data.cp ="relational operator"
+        else if(compare(data,"+=")||compare(data,"-=")||compare(data,"/=")||compare(data,"*=")||compare(data,"%=")) data.cp="assignment operator"
+        else if(compare(data,"||") || compare(data,"&&") ) data.cp="logical operator"
+        else if(regexForFloat(data.vp)||regexForInt(data.vp)) data.cp="Number"
+        else if(punctuators.includes(data.vp) || keywords.includes(data.vp)) data.cp=data.vp
+        else if(regexForId(data.vp)) data.cp="Id"
+
+    }
+})
+fs.writeFileSync('output.txt','')
+splits.forEach(data=>{
+    fs.appendFileSync('output.txt',JSON.stringify({vp:data.vp,cp:data.cp,lineNo:data.lineNo}))
+    fs.appendFileSync('output.txt',"\n")
+    fs.appendFileSync('output.txt',"\n")
+    fs.appendFileSync('output.txt',"\n")
+})
+
+console.log(splits);
